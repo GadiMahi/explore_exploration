@@ -6,29 +6,54 @@ from nav_msgs.msg import OccupancyGrid
 from gps_frontier_explorer.frontier_detection import detect_frontier_cells, grid_to_world
 from visualization_msgs.msg import Marker, MarkerArray
 from gps_frontier_explorer.nav2_client import Nav2Client
-from gps_frontier_explorer.frontier_utils import cluster_frontiers, compute_centroids
+from gps_frontier_explorer.frontier_utils import cluster_frontiers, compute_centroids, is_point_in_known_area
 from gps_frontier_explorer.frontier_selection import select_best_centroid
+
 
 class TestFrontierNode(Node):
     def __init__(self):
         super().__init__('test_frontier_node')
-        self.sub = self.create_subscription(
-            OccupancyGrid,
-            '/map',
-            self.map_callback,
-            10
-        )
-        self.marker_pub = self.create_publisher(MarkerArray, 'frontier_marker', 10)
-        self.navigator = Nav2Client()
+        
+        # Parameters
+        self.goal_x, self.goal_y = 1.25, 1.82
+        self.sent_final_goal = False
         self.goal_active = False
+        
+        # Subscribers and Publishers
+        self.sub = self.create_subscription(OccupancyGrid, '/map', self.map_callback, 10)
+        self.marker_pub = self.create_publisher(MarkerArray, 'frontier_marker', 10)
 
+        # Nav2 Commander Client
+        self.navigator = Nav2Client()
+        
+        # Periodic Nav2 goal status checker
         self.timer = self.create_timer(0.5, self.check_nav_status)
 
-    def map_callback(self, msg):
+        self.declare_parameter("debug_visualization", False)
+        self.debug_visualization = self.get_parameter("debug_visualization").get_parameter_value().bool_value
 
+    def map_callback(self, msg):
+        """Triggered when the /map topic updates(from SLAM)."""
+
+        # Don't re-run logic while navigating
         if self.goal_active:
             return 
-        self.visualize_processed_cells(msg)
+        
+        # visualize 
+        if self.debug_visualization:
+            self.visualize_processed_cells(msg)
+
+        # if final goal is already inside known map -> send it once
+        if is_point_in_known_area(msg, self.goal_x, self.goal_y):
+            if not self.sent_final_goal:
+                self.get_logger().info("Goal is inside known map - sending final goal to Nav2.")
+                self.navigator.go_to_xy(self.goal_x, self.goal_y, 0.0, frame_id="map")
+                self.goal_active = True
+                self.sent_final_goal = True
+                self.marker_pub.publish(self._delete_all_array())
+            return
+        
+        # Otherwise:detect frontiers -> cluster -> pick best centroid
         cells = detect_frontier_cells(msg)
         self.get_logger().info(f"Detected {len(cells)} frontier cells")
 
@@ -37,14 +62,15 @@ class TestFrontierNode(Node):
         self.get_logger().info(f"Found {len(clusters)} clusters, {len(centroids)} centroids")
 
         markers = MarkerArray()
-        markers.markers.clear()
+        markers.markers.append(self._delete_all())
         for i, (cx,cy) in enumerate(centroids):
 
             m = Marker()
             m.header.frame_id = "map" 
             m.header.stamp = self.get_clock().now().to_msg()
-            m.ns = f"frontier_{self.get_clock().now().nanoseconds}"
-            m.id = m.type = Marker.SPHERE
+            m.ns = f"frontier_centroids"
+            m.id = i
+            m.type = Marker.SPHERE
             m.action = Marker.ADD
             m.pose.position.x = cx
             m.pose.position.y = cy
@@ -55,12 +81,13 @@ class TestFrontierNode(Node):
 
             markers.markers.append(m)
 
-        goal_x, goal_y = 3.0, 2.0
-        best = select_best_centroid(centroids, goal_x, goal_y)
+        # Select the best frontier centroid toward goal
+        best = select_best_centroid(centroids, self.goal_x, self.goal_y)
 
         if best:
             cx, cy, dist = best
 
+            # Highlight chosen centroid
             best_marker = Marker()
             best_marker.header.frame_id = "map"
             best_marker.header.stamp = self.get_clock().now().to_msg()
@@ -77,11 +104,12 @@ class TestFrontierNode(Node):
             markers.markers.append(best_marker)
 
             self.get_logger().info(f"Sending Nav2 goal to centroid at ({cx:.2f}, {cy:.2f})")
-            #self.navigator.set_initial_pose()
+            
+            # Send goal to Nav2
             self.navigator.go_to_xy(cx, cy, 0.0)
             self.goal_active = True
 
-
+        # Draw final global goal (blue sphere)
         goal_marker = Marker()
         goal_marker.header.frame_id = "map"
         goal_marker.header.stamp = self.get_clock().now().to_msg()
@@ -89,15 +117,12 @@ class TestFrontierNode(Node):
         goal_marker.id = 9999
         goal_marker.type = Marker.SPHERE
         goal_marker.action = Marker.ADD
-        goal_marker.pose.position.x = goal_x
-        goal_marker.pose.position.y = goal_y
+        goal_marker.pose.position.x = self.goal_x
+        goal_marker.pose.position.y = self.goal_y
         goal_marker.pose.position.z = 0.1
         goal_marker.scale.x = goal_marker.scale.y = goal_marker.scale.z = 0.3
         goal_marker.color.r, goal_marker.color.g, goal_marker.color.b, goal_marker.color.a = 0.0, 0.0, 1.0, 1.0
-
-
         markers.markers.append(goal_marker)
-
 
         self.marker_pub.publish(markers)
 
@@ -140,11 +165,26 @@ class TestFrontierNode(Node):
         self.marker_pub.publish(markers)
 
     def check_nav_status(self):
+        """ Called periodically to monitor Nav2 Progress"""
+        self.navigator.spin_once(0.05)
+
         if self.goal_active and self.navigator.is_task_complete():
             result = self.navigator.result()
             self.get_logger().info(f"Goal finished with result: {result}")
             self.goal_active = False
 
+            if self.sent_final_goal:
+                self.get_logger().info("FINAL GOAL REACHED - EXPLORATION COMPLETE")
+
+    def _delete_all(self) -> Marker:
+        m = Marker()
+        m.action = Marker.DELETEALL
+        return m
+    
+    def _delete_all_array(self) -> MarkerArray:
+        arr = MarkerArray()
+        arr.markers.append(self._delete_all())
+        return arr
 
 
 

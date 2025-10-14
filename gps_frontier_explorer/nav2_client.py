@@ -59,7 +59,12 @@ class Nav2Client:
         self.navigator.cancelTask()
 
     def spin_once (self, timeout_sec: float = 0.1):
-        rclpy.spin_once(self.navigator.__node, timeout_sec=0.1)
+        try:
+            rclpy.spin_once(self.navigator._BasicNavigator__node, timeout_sec=0.1)
+        except AttributeError:
+            node = getattr(self.navigator, '_node', None) or getattr(self.navigator, "node", None)
+            if node is not None:
+                rclpy.spin_once(node, timeout_sec=timeout_sec)
 
     
 
