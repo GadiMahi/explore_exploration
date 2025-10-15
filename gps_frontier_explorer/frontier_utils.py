@@ -5,7 +5,7 @@ from gps_frontier_explorer.frontier_detection import grid_to_world
 from nav_msgs.msg import OccupancyGrid
 
 def cluster_frontiers(frontier_cells, og, eps: float = None, min_samples: int = 3,
-                      min_cluster_size: int = 3, max_cluster_points: int = 80):
+                      min_cluster_size: int = 3, max_cluster_points: int = 50):
     """
     Cluster frontier cells into spatial groups using adaptive DBSCAN,
     automatically handling different map scales and splitting oversized clusters.
