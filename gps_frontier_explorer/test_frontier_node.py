@@ -8,6 +8,9 @@ from visualization_msgs.msg import Marker, MarkerArray
 from gps_frontier_explorer.nav2_client import Nav2Client
 from gps_frontier_explorer.frontier_utils import cluster_frontiers, compute_centroids, is_point_in_known_area
 from gps_frontier_explorer.frontier_selection import select_best_centroid
+import tf2_ros
+from geometry_msgs.msg import TransformStamped
+from typing import Optional, Tuple, Sequence, Iterable
 
 
 class TestFrontierNode(Node):
@@ -15,9 +18,19 @@ class TestFrontierNode(Node):
         super().__init__('test_frontier_node')
         
         # Parameters
-        self.goal_x, self.goal_y = 1.25, 1.82
+        self.goal_x, self.goal_y = 3.0, 1.0
         self.sent_final_goal = False
         self.goal_active = False
+        self.visited_frontiers = []
+        self.last_goal = None
+        self.skip_radius = 0.30
+        self.tie_threshold = 0.10
+        self.visited_limit = 30
+    
+        
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        
         
         # Subscribers and Publishers
         self.sub = self.create_subscription(OccupancyGrid, '/map', self.map_callback, 10)
@@ -31,6 +44,14 @@ class TestFrontierNode(Node):
 
         self.declare_parameter("debug_visualization", False)
         self.debug_visualization = self.get_parameter("debug_visualization").get_parameter_value().bool_value
+    
+    def get_robot_xy(self) -> Optional[tuple]:
+        try:
+            tf:TransformStamped = self.tf_buffer.lookup_transform("map", "base_link", rclpy.time.Time())
+            return (tf.transform.translation.x, tf.transform.translation.y)
+        except Exception as e:
+            self.get_logger().warn(f"TF lookup failed: {e}")
+            return None
 
     def map_callback(self, msg):
         """Triggered when the /map topic updates(from SLAM)."""
@@ -82,10 +103,10 @@ class TestFrontierNode(Node):
             markers.markers.append(m)
 
         # Select the best frontier centroid toward goal
-        best = select_best_centroid(centroids, self.goal_x, self.goal_y)
-
+        robot_xy = self.get_robot_xy()
+        best = select_best_centroid(centroids, self.goal_x, self.goal_y, last_goal = self.last_goal, visited = self.visited_frontiers, skip_radius = self.skip_radius, tie_threshold = self.tie_threshold, robot_xy = robot_xy)
         if best:
-            cx, cy, dist = best
+            cx, cy, d_goal, d_robot = best
 
             # Highlight chosen centroid
             best_marker = Marker()
@@ -108,6 +129,10 @@ class TestFrontierNode(Node):
             # Send goal to Nav2
             self.navigator.go_to_xy(cx, cy, 0.0)
             self.goal_active = True
+            self.last_goal = (cx, cy)
+            self.visited_frontiers.append(self.last_goal)
+            if len(self.visited_frontiers) > self.visited_limit:
+                self.visited_frontiers.pop(0)
 
         # Draw final global goal (blue sphere)
         goal_marker = Marker()

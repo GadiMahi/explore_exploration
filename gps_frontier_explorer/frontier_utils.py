@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from sklearn.cluster import DBSCAN
 from gps_frontier_explorer.frontier_detection import grid_to_world
@@ -7,10 +8,17 @@ def cluster_frontiers(frontier_cells, og, eps: float = None, min_samples: int = 
     if not frontier_cells:
         return []
     
+    
+    width = og.info.width
+    height = og.info.height
     res = og.info.resolution 
 
+    map_width_m = width * res
+    map_height_m = height * res
+    map_diag = math.sqrt(map_width_m**2 + map_height_m**2)
+    
     if eps is None:
-        eps = max(1.2*res, 0.01)
+        eps = max(2*res, 0.005 * map_diag)
     points = np.array([grid_to_world(og, c, r) for (c,r) in frontier_cells])
 
     clustering = DBSCAN(eps = eps, min_samples=min_samples).fit(points)
