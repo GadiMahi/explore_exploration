@@ -1,4 +1,0 @@
-[console_scripts]
-gps_frontier_node = gps_frontier_explorer.gps_frontier_node:main
-test_frontier_node = gps_frontier_explorer.test_frontier_node:main
-

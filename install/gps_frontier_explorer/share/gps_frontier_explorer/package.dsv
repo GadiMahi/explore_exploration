@@ -1,8 +1,0 @@
-source;ros_domain_id.txt
-source;share/gps_frontier_explorer/hook/pythonpath.ps1
-source;share/gps_frontier_explorer/hook/pythonpath.dsv
-source;share/gps_frontier_explorer/hook/pythonpath.sh
-source;ros_domain_id.txt
-source;share/gps_frontier_explorer/hook/ament_prefix_path.ps1
-source;share/gps_frontier_explorer/hook/ament_prefix_path.dsv
-source;share/gps_frontier_explorer/hook/ament_prefix_path.sh
