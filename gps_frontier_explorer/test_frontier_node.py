@@ -190,7 +190,7 @@ class TestFrontierNode(Node):
         self.marker_pub.publish(markers)
 
     def check_nav_status(self):
-        """ Called periodically to monitor Nav2 Progress"""
+        """Periodically check Nav2 progress and handle failures gracefully."""
         self.navigator.spin_once(0.05)
 
         if self.goal_active and self.navigator.is_task_complete():
@@ -198,14 +198,34 @@ class TestFrontierNode(Node):
             self.get_logger().info(f"Goal finished with result: {result}")
             self.goal_active = False
 
-            if self.sent_final_goal:
+            # --- Handle outcome ---
+            if result == 0:  # SUCCEEDED
+                self.get_logger().info("Goal reached successfully.")
+            elif result == 1:  # CANCELED
+                self.get_logger().warn("Goal was canceled! Trying next frontier...")
+                self._handle_failed_goal()
+            elif result == 2:  # FAILED
+                self.get_logger().warn("Goal unreachable! Trying next frontier...")
+                self._handle_failed_goal()
+
+            if self.sent_final_goal and result == 0:
                 self.get_logger().info("FINAL GOAL REACHED - EXPLORATION COMPLETE")
+
+    def _handle_failed_goal(self):
+        """Mark failed frontier and retry next best centroid."""
+        if self.last_goal:
+            self.visited_frontiers.append(self.last_goal)
+            if len(self.visited_frontiers) > self.visited_limit:
+                self.visited_frontiers.pop(0)
+
+        self.get_logger().info("Selecting next reachable frontier...")
+        self.goal_active = False  # allow map_callback to trigger again
 
     def _delete_all(self) -> Marker:
         m = Marker()
         m.action = Marker.DELETEALL
         return m
-    
+
     def _delete_all_array(self) -> MarkerArray:
         arr = MarkerArray()
         arr.markers.append(self._delete_all())
