@@ -1,0 +1,55 @@
+[0.464s] Invoking command in '/home/raj/ROS2/gps_frontier_exploration/explore_exploration': PYTHONPATH=/home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/gps_frontier_explorer build --build-base /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build install --record /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/install.log --single-version-externally-managed install_data
+[0.625s] running egg_info
+[0.625s] creating build/gps_frontier_explorer/gps_frontier_explorer.egg-info
+[0.625s] writing build/gps_frontier_explorer/gps_frontier_explorer.egg-info/PKG-INFO
+[0.625s] writing dependency_links to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/dependency_links.txt
+[0.625s] writing entry points to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/entry_points.txt
+[0.625s] writing requirements to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/requires.txt
+[0.625s] writing top-level names to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/top_level.txt
+[0.625s] writing manifest file 'build/gps_frontier_explorer/gps_frontier_explorer.egg-info/SOURCES.txt'
+[0.626s] reading manifest file 'build/gps_frontier_explorer/gps_frontier_explorer.egg-info/SOURCES.txt'
+[0.628s] writing manifest file 'build/gps_frontier_explorer/gps_frontier_explorer.egg-info/SOURCES.txt'
+[0.628s] running build
+[0.628s] running build_py
+[0.628s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build
+[0.628s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib
+[0.628s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.628s] copying gps_frontier_explorer/frontier_selection.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.628s] copying gps_frontier_explorer/test_frontier_node.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.628s] copying gps_frontier_explorer/frontier_detection.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.629s] copying gps_frontier_explorer/gps_frontier_node.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.629s] copying gps_frontier_explorer/__init__.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.629s] copying gps_frontier_explorer/frontier_utils.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.629s] copying gps_frontier_explorer/nav2_client.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+[0.629s] running install
+[0.629s] running install_lib
+[0.629s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/frontier_selection.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/test_frontier_node.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/frontier_detection.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/gps_frontier_node.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/__init__.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/frontier_utils.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/nav2_client.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+[0.630s] byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/frontier_selection.py to frontier_selection.cpython-310.pyc
+[0.631s] byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/test_frontier_node.py to test_frontier_node.cpython-310.pyc
+[0.632s] byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/frontier_detection.py to frontier_detection.cpython-310.pyc
+[0.632s] byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/gps_frontier_node.py to gps_frontier_node.cpython-310.pyc
+[0.632s] byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/__init__.py to __init__.cpython-310.pyc
+[0.632s] byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/frontier_utils.py to frontier_utils.cpython-310.pyc
+[0.633s] byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/nav2_client.py to nav2_client.cpython-310.pyc
+[0.633s] running install_data
+[0.633s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/share/ament_index
+[0.633s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/share/ament_index/resource_index
+[0.633s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/share/ament_index/resource_index/packages
+[0.634s] copying resource/gps_frontier_explorer -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/share/ament_index/resource_index/packages
+[0.634s] copying package.xml -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/share/gps_frontier_explorer
+[0.634s] creating /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/share/gps_frontier_explorer/launch
+[0.634s] copying launch/gps_frontier_explorer.launch.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/share/gps_frontier_explorer/launch
+[0.634s] running install_egg_info
+[0.635s] Copying build/gps_frontier_explorer/gps_frontier_explorer.egg-info to /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer-0.0.0-py3.10.egg-info
+[0.635s] running install_scripts
+[0.650s] Installing gps_frontier_node script to /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/gps_frontier_explorer
+[0.650s] Installing test_frontier_node script to /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/gps_frontier_explorer
+[0.650s] writing list of installed files to '/home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/install.log'
+[0.673s] Invoked command in '/home/raj/ROS2/gps_frontier_exploration/explore_exploration' returned '0': PYTHONPATH=/home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/gps_frontier_explorer build --build-base /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build install --record /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/install.log --single-version-externally-managed install_data

@@ -1,0 +1,23 @@
+running egg_info
+writing build/gps_frontier_explorer/gps_frontier_explorer.egg-info/PKG-INFO
+writing dependency_links to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/dependency_links.txt
+writing entry points to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/entry_points.txt
+writing requirements to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/requires.txt
+writing top-level names to build/gps_frontier_explorer/gps_frontier_explorer.egg-info/top_level.txt
+reading manifest file 'build/gps_frontier_explorer/gps_frontier_explorer.egg-info/SOURCES.txt'
+writing manifest file 'build/gps_frontier_explorer/gps_frontier_explorer.egg-info/SOURCES.txt'
+running build
+running build_py
+copying gps_frontier_explorer/test_frontier_node.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer
+running install
+running install_lib
+copying /home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/build/lib/gps_frontier_explorer/test_frontier_node.py -> /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer
+byte-compiling /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer/test_frontier_node.py to test_frontier_node.cpython-310.pyc
+running install_data
+running install_egg_info
+removing '/home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer-0.0.0-py3.10.egg-info' (and everything under it)
+Copying build/gps_frontier_explorer/gps_frontier_explorer.egg-info to /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/python3.10/site-packages/gps_frontier_explorer-0.0.0-py3.10.egg-info
+running install_scripts
+Installing gps_frontier_node script to /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/gps_frontier_explorer
+Installing test_frontier_node script to /home/raj/ROS2/gps_frontier_exploration/explore_exploration/install/gps_frontier_explorer/lib/gps_frontier_explorer
+writing list of installed files to '/home/raj/ROS2/gps_frontier_exploration/explore_exploration/build/gps_frontier_explorer/install.log'
