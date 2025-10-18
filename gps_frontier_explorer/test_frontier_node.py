@@ -1,5 +1,7 @@
 # exploring_exploration/test_frontier_node.py
 
+import math
+import time
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
@@ -55,6 +57,8 @@ class TestFrontierNode(Node):
 
     def map_callback(self, msg):
         """Triggered when the /map topic updates(from SLAM)."""
+
+        self.latest_map = msg  # store for other methods
 
         # Don't re-run logic while navigating
         if self.goal_active:
@@ -200,16 +204,54 @@ class TestFrontierNode(Node):
 
             # --- Handle outcome ---
             if result == 0:  # SUCCEEDED
-                self.get_logger().info("Goal reached successfully.")
+                self.get_logger().info("Frontier reached successfully — rotating toward final goal.")
+                self._rotate_toward_goal()  # NEW STEP
+
             elif result == 1:  # CANCELED
                 self.get_logger().warn("Goal was canceled! Trying next frontier...")
                 self._handle_failed_goal()
+
             elif result == 2:  # FAILED
                 self.get_logger().warn("Goal unreachable! Trying next frontier...")
                 self._handle_failed_goal()
 
             if self.sent_final_goal and result == 0:
                 self.get_logger().info("FINAL GOAL REACHED - EXPLORATION COMPLETE")
+    
+    def perform_goal_scan(self):
+        """Rotate gently only if map didn't expand and goal is still unknown."""
+        if not self.last_goal or not hasattr(self, "latest_map"):
+            return
+
+        gx, gy = self.goal_x, self.goal_y
+        rx, ry = self.last_goal
+
+        # Check if goal is now visible
+        if is_point_in_known_area(self.latest_map, gx, gy):
+            self.get_logger().info("Goal already visible — no rotation needed.")
+            return
+
+        # Measure known cell count change
+        known_now = sum(v >= 0 for v in self.latest_map.data)
+        delta = known_now - getattr(self, "last_known_count", 0)
+        self.last_known_count = known_now
+
+        if delta > 500:  # enough map expansion
+            self.get_logger().info("Map expanded — skipping rotation.")
+            return
+
+        self.get_logger().warning("Map stagnant, performing gentle goal-facing scan...")
+
+        yaw_to_goal = math.atan2(gy - ry, gx - rx)
+
+        # Perform a short ±15° sweep
+        for delta_yaw in [-0.25, 0.0, 0.25]:  # radians (~15°)
+            yaw = yaw_to_goal + delta_yaw
+            self.navigator.go_to_xy(rx, ry, yaw)
+            self.get_logger().info(f"Rotating slightly to yaw {math.degrees(yaw):.1f}°")
+            self.navigator.spin_once(0.5)
+
+        self.get_logger().info("Scan complete — waiting for new frontiers...")
 
     def _handle_failed_goal(self):
         """Mark failed frontier and retry next best centroid."""
@@ -221,6 +263,36 @@ class TestFrontierNode(Node):
         self.get_logger().info("Selecting next reachable frontier...")
         self.goal_active = False  # allow map_callback to trigger again
 
+    def _rotate_toward_goal(self):
+        """Rotate rover in place to face the final goal, then wait for SLAM update."""
+        try:
+            robot_xy = self.get_robot_xy()
+            if robot_xy is None:
+                self.get_logger().warning("Cannot rotate toward goal — robot pose unavailable.")
+                return
+
+            rx, ry = robot_xy
+            dx = self.goal_x - rx
+            dy = self.goal_y - ry
+            yaw = math.atan2(dy, dx)
+
+            self.get_logger().info(f"Aligning rover toward goal heading (yaw={math.degrees(yaw):.1f}°)")
+            
+            # Command rotation in place
+            self.navigator.go_to_xy(rx, ry, yaw)
+
+            # Wait until rotation completes
+            while not self.navigator.is_task_complete():
+                self.navigator.spin_once(0.1)
+
+            self.get_logger().info("Alignment complete. Waiting for SLAM map to update...")
+            
+            # Pause briefly to allow SLAM to integrate new sensor data
+            time.sleep(3.0)
+
+        except Exception as e:
+            self.get_logger().warning(f"Rotation toward goal failed: {e}")
+
     def _delete_all(self) -> Marker:
         m = Marker()
         m.action = Marker.DELETEALL
@@ -230,6 +302,7 @@ class TestFrontierNode(Node):
         arr = MarkerArray()
         arr.markers.append(self._delete_all())
         return arr
+
 
 
 
