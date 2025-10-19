@@ -291,35 +291,39 @@ class TestFrontierNode(Node):
         self.goal_active = False  # allow map_callback to trigger again
 
     def _rotate_toward_goal(self):
-        """Rotate rover in place to face the final goal, then wait for SLAM update."""  
-        if self.rotation_in_progress:
-            return
-        
-        self.rotation_in_progress = True
-
+        """Rotate rover in place to face the final goal, then wait for SLAM update."""
         try:
-            robot_xy = self.get_robot_xy()
-            if robot_xy is None:
-                self.get_logger().warning("Cannot rotate toward goal — robot pose unavailable.")
-                return
+            tf: TransformStamped = self.tf_buffer.lookup_transform("map", "base_link", rclpy.time.Time())
+            rx = tf.transform.translation.x
+            ry = tf.transform.translation.y
+            rot = tf.transform.rotation
 
-            rx, ry = robot_xy
+            # Convert current orientation quaternion to yaw
+            _, _, current_yaw = tf_transformations.euler_from_quaternion([rot.x, rot.y, rot.z, rot.w])
+
+            # Compute direction to goal
             dx = self.goal_x - rx
             dy = self.goal_y - ry
-            yaw = math.atan2(dy, dx)
+            goal_yaw = math.atan2(dy, dx)
 
-            self.get_logger().info(f"Aligning rover toward goal heading (yaw={math.degrees(yaw):.1f}°)")
-            
-            # Command rotation in place
-            self.navigator.go_to_xy(rx, ry, yaw)
+            # Compute yaw difference (normalized to [-π, π])
+            yaw_diff = math.atan2(math.sin(goal_yaw - current_yaw), math.cos(goal_yaw - current_yaw))
 
-            # Wait until rotation completes
+            self.get_logger().info(
+                f"Current yaw: {math.degrees(current_yaw):.1f}°, "
+                f"Goal yaw: {math.degrees(goal_yaw):.1f}°, "
+                f"Need to turn: {math.degrees(yaw_diff):.1f}°"
+            )
+
+            # Command rotation toward desired yaw
+            target_yaw = current_yaw + yaw_diff
+            self.navigator.go_to_xy(rx, ry, target_yaw)
+
+            # Wait for rotation completion
             while not self.navigator.is_task_complete():
                 self.navigator.spin_once(0.1)
 
             self.get_logger().info("Alignment complete. Waiting for SLAM map to update...")
-            
-            # Pause briefly to allow SLAM to integrate new sensor data
             time.sleep(3.0)
 
         except Exception as e:
