@@ -22,7 +22,7 @@ class TestFrontierNode(Node):
         super().__init__('test_frontier_node')
         
         # Parameters
-        self.goal_x, self.goal_y = 3.0, -4.0
+        self.goal_x, self.goal_y = 2.0, 4.0
         self.sent_final_goal = False
         self.goal_active = False
         self.visited_frontiers = []
@@ -64,7 +64,7 @@ class TestFrontierNode(Node):
         self.latest_map = msg  # store for other methods
 
         # Don't re-run logic while navigating
-        if self.goal_active or self.rotation_in_progress:
+        if self.goal_active:
             return 
         
         # visualize 
@@ -233,6 +233,7 @@ class TestFrontierNode(Node):
 
         if code == 0:  # SUCCEEDED
             self.get_logger().info("Frontier reached successfully — rotating toward final goal.")
+            time.sleep(3.0) # wait for SLAM to update
             self.goal_active = False
             #self._rotate_toward_goal()  # NEW STEP
 
