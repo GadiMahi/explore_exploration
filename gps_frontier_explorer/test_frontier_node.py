@@ -14,6 +14,7 @@ import tf2_ros
 from geometry_msgs.msg import TransformStamped
 from typing import Optional, Tuple, Sequence, Iterable
 from nav2_simple_commander.robot_navigator import TaskResult
+import tf_transformations
 
 
 class TestFrontierNode(Node):
