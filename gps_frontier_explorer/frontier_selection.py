@@ -20,7 +20,7 @@ def select_best_centroid(
     tie_threshold: float = 0.10,
     robot_xy: Optional[Point] = None,
     max_goal_dist: Optional[float] = None,
-) -> Optional[Tuple[float, float, float, Optional[float]]]:
+) -> Optional[list[Tuple[float, float, float, Optional[float]]]]:
     """
     Choose the best centroid toward the goal while skipping previously visited or duplicate ones.
     Returns (cx, cy, d_goal, d_robot) or None if no valid candidate.
@@ -64,4 +64,4 @@ def select_best_centroid(
             if d_robot is not None and d_robot < best_d_robot - 1e-9:
                 best, best_d_goal, best_d_robot = c, d_goal, d_robot
 
-    return best
+    return sorted(candidates, key=lambda c: c[2])  # sort by d_goal

@@ -111,37 +111,69 @@ class TestFrontierNode(Node):
 
         # Select the best frontier centroid toward goal
         robot_xy = self.get_robot_xy()
-        best = select_best_centroid(centroids, self.goal_x, self.goal_y, last_goal = self.last_goal, visited = self.visited_frontiers, skip_radius = self.skip_radius, tie_threshold = self.tie_threshold, robot_xy = robot_xy)
-        if best:
-            cx, cy, d_goal, d_robot = best
+        candidates = select_best_centroid(
+            centroids,
+            self.goal_x,
+            self.goal_y,
+            last_goal=self.last_goal,
+            visited=self.visited_frontiers,
+            skip_radius=self.skip_radius,
+            tie_threshold=self.tie_threshold,
+            robot_xy=robot_xy
+        )
+        if not candidates:
+            self.get_logger().warning("No valid frontier centroids found after filtering.")
+            return
+        chosen_frontier = None
+        for cx, cy, d_goal, d_robot in candidates:
+            if not self.last_goal or math.hypot(cx - self.last_goal[0], cy - self.last_goal[1]) > self.skip_radius:
+                chosen_frontier = (cx, cy, d_goal, d_robot)
+                break  # take the best one
 
-            # Highlight chosen centroid
-            best_marker = Marker()
-            best_marker.header.frame_id = "map"
-            best_marker.header.stamp = self.get_clock().now().to_msg()
-            best_marker.ns = "best_centroid"
-            best_marker.id = 0
-            best_marker.type = Marker.CUBE
-            best_marker.action = Marker.ADD
-            best_marker.pose.position.x = cx
-            best_marker.pose.position.y = cy
-            best_marker.pose.position.z = 0.2
-            best_marker.scale.x = best_marker.scale.y = best_marker.scale.z = 0.35
-            best_marker.color.r, best_marker.color.g, best_marker.color.b, best_marker.color.a = 1.0, 0.0, 0.0, 1.0
+        if not chosen_frontier:
+            cx, cy = candidates[0][0], candidates[0][1]
+        else:
+            cx, cy = chosen_frontier 
+        
+        yaw = math.atan2(self.goal_y - cy, self.goal_x - cx)
+        self.get_logger().info(f"Selected frontier at ({cx:.2f}, {cy:.2f}) -> yaw {math.degrees(yaw):.1f}°")
 
-            markers.markers.append(best_marker)
 
-            self.get_logger().info(f"Sending Nav2 goal to centroid at ({cx:.2f}, {cy:.2f})")
-            
-            # Send goal to Nav2
-            yaw = math.atan2(self.goal_y - cy, self.goal_x - cx)
+        self.stage = 'IDLE'
+        self.pending_frontier = None
+        self.pending_backtrack = None
 
-            self.navigator.go_to_xy(cx, cy, yaw)
-            self.goal_active = True
-            self.last_goal = (cx, cy)
-            self.visited_frontiers.append(self.last_goal)
-            if len(self.visited_frontiers) > self.visited_limit:
-                self.visited_frontiers.pop(0)
+        bx, by = self._compute_backtrack_point(cx, cy)
+        self.pending_frontier = (cx, cy)
+        if is_point_in_known_area(msg, bx, by):
+            target = (bx,by)
+            self.stage = "BACKTRACK"
+        else:
+            target = (cx,cy)
+            self.stage = "FRONTIER"
+
+        
+
+        # Highlight chosen centroid
+        best_marker = Marker()
+        best_marker.header.frame_id = "map"
+        best_marker.header.stamp = self.get_clock().now().to_msg()
+        best_marker.ns = "best_centroid"
+        best_marker.id = 0
+        best_marker.type = Marker.CUBE
+        best_marker.action = Marker.ADD
+        best_marker.pose.position.x = cx
+        best_marker.pose.position.y = cy
+        best_marker.pose.position.z = 0.2
+        best_marker.scale.x = best_marker.scale.y = best_marker.scale.z = 0.35
+        best_marker.color.r, best_marker.color.g, best_marker.color.b, best_marker.color.a = 1.0, 0.0, 0.0, 1.0
+
+        markers.markers.append(best_marker)
+
+
+        yaw = math.atan2(self.goal_y - cy, self.goal_x - cx)
+        self.navigator.go_to_xy(target[0], target[1], yaw)
+        self.goal_active = True
 
         # Draw final global goal (blue sphere)
         goal_marker = Marker()
@@ -199,22 +231,21 @@ class TestFrontierNode(Node):
         self.marker_pub.publish(markers)
 
     def check_nav_status(self):
-        """Periodically check Nav2 progress and handle failures gracefully."""
+        """Periodically check Nav2 progress and handle multi-stage navigation (backtrack → frontier)."""
         self.navigator.spin_once(0.05)
 
         if not self.goal_active:
-            self.get_logger().debug("No active goal. goal_active=False")
+            return  # Nothing to check if no goal in progress
 
         done = self.navigator.is_task_complete()
-        self.get_logger().info("[nav] goal_active=True, is_task_complete=True")
-
         if not done:
             return
-        
+
+        # --- Get Nav2 result ---
         result = self.navigator.result()
         self.get_logger().info(f"[nav] Goal completed with result: {result}")
 
-
+        # Normalize result to integer code
         try:
             if result == TaskResult.SUCCEEDED:
                 code = 0
@@ -223,30 +254,56 @@ class TestFrontierNode(Node):
             elif result == TaskResult.FAILED:
                 code = 2
             else:
-                code = -1  # Unknown result
+                code = -1
         except Exception as e:
-            code = int(result) if  isinstance(result, int) else -1
+            code = int(result) if isinstance(result, int) else -1
             self.get_logger().warn(f"Error interpreting Nav2 result: {e}")
 
-        self.get_logger().info(f"[nav] Interpreted goal result code: {code}")
-        #self.goal_active = False
+        # --- Success case ---
+        if code == 0:
+            if getattr(self, "stage", "IDLE") == "BACKTRACK" and hasattr(self, "pending_frontier"):
+                # Completed backtrack leg → now go to the actual frontier
+                cx, cy = self.pending_frontier
+                yaw = math.atan2(self.goal_y - cy, self.goal_x - cx)
+                self.get_logger().info(f"Reached backtrack point. Proceeding to frontier ({cx:.2f}, {cy:.2f})...")
+                self.navigator.go_to_xy(cx, cy, yaw)
+                self.stage = "FRONTIER"
+                return
 
-        if code == 0:  # SUCCEEDED
-            self.get_logger().info("Frontier reached successfully — rotating toward final goal.")
-            time.sleep(3.0) # wait for SLAM to update
-            self.goal_active = False
-            #self._rotate_toward_goal()  # NEW STEP
+            elif getattr(self, "stage", "IDLE") == "FRONTIER":
+                # Fully reached the frontier — now mark as visited
+                if hasattr(self, "pending_frontier") and self.pending_frontier:
+                    cx, cy = self.pending_frontier
+                    self.last_goal = (cx, cy)
+                    self.visited_frontiers.append((cx, cy))
+                    if len(self.visited_frontiers) > self.visited_limit:
+                        self.visited_frontiers.pop(0)
+                self.get_logger().info("Frontier reached successfully.")
+                self.stage = "IDLE"
+                self.goal_active = False
+                self.pending_frontier = None
+                return
 
-        elif code == 1:  # CANCELED
-            self.get_logger().warn("Goal was canceled! Trying next frontier...")
+            else:
+                # Normal single-stage goal (no backtrack)
+                self.get_logger().info("Goal reached successfully (no backtrack stage).")
+                self.goal_active = False
+                self.stage = "IDLE"
+
+        # --- Canceled or failed cases ---
+        elif code == 1:
+            self.get_logger().warn("Goal was canceled — trying next frontier.")
+            self.stage = "IDLE"
             self._handle_failed_goal()
 
-        elif code == 2:  # FAILED
-            self.get_logger().warn("Goal unreachable! Trying next frontier...")
+        elif code == 2:
+            self.get_logger().warn("Goal unreachable — trying next frontier.")
+            self.stage = "IDLE"
             self._handle_failed_goal()
 
+        # --- Final goal case ---
         if self.sent_final_goal and code == 0:
-            self.get_logger().info("FINAL GOAL REACHED - EXPLORATION COMPLETE")
+            self.get_logger().info("FINAL GOAL REACHED — EXPLORATION COMPLETE.")
 
     
     def perform_goal_scan(self):
@@ -283,6 +340,24 @@ class TestFrontierNode(Node):
             self.navigator.spin_once(0.5)
 
         self.get_logger().info("Scan complete — waiting for new frontiers...")
+
+    def _compute_backtrack_point(self, fx, fy, distance=0.4):
+        """
+        Compute a point slightly behind the frontier (away from the goal).
+        Returns (bx, by).
+        """
+        dx = fx - self.goal_x
+        dy = fy - self.goal_y
+        length = math.hypot(dx, dy)
+        if length == 0:
+            return fx, fy  # already at goal
+        
+        ux = dx / length
+        uy = dy / length
+
+        bx = fx + ux * distance
+        by = fy + uy * distance 
+        return bx, by
 
     def _handle_failed_goal(self):
         """Mark failed frontier and retry next best centroid."""
