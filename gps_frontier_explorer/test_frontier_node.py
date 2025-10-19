@@ -134,7 +134,9 @@ class TestFrontierNode(Node):
             self.get_logger().info(f"Sending Nav2 goal to centroid at ({cx:.2f}, {cy:.2f})")
             
             # Send goal to Nav2
-            self.navigator.go_to_xy(cx, cy, 0.0)
+            yaw = math.atan2(self.goal_y - cy, self.goal_x - cx)
+
+            self.navigator.go_to_xy(cx, cy, yaw)
             self.goal_active = True
             self.last_goal = (cx, cy)
             self.visited_frontiers.append(self.last_goal)
@@ -231,7 +233,8 @@ class TestFrontierNode(Node):
 
         if code == 0:  # SUCCEEDED
             self.get_logger().info("Frontier reached successfully — rotating toward final goal.")
-            self._rotate_toward_goal()  # NEW STEP
+            self.goal_active = False
+            #self._rotate_toward_goal()  # NEW STEP
 
         elif code == 1:  # CANCELED
             self.get_logger().warn("Goal was canceled! Trying next frontier...")
