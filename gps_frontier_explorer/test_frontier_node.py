@@ -13,6 +13,7 @@ from gps_frontier_explorer.frontier_selection import select_best_centroid
 import tf2_ros
 from geometry_msgs.msg import TransformStamped
 from typing import Optional, Tuple, Sequence, Iterable
+from nav2_simple_commander.robot_navigator import TaskResult
 
 
 class TestFrontierNode(Node):
@@ -28,6 +29,7 @@ class TestFrontierNode(Node):
         self.skip_radius = 0.30
         self.tie_threshold = 0.10
         self.visited_limit = 30
+        self.rotation_in_progress = False
     
         
         self.tf_buffer = tf2_ros.Buffer()
@@ -61,7 +63,7 @@ class TestFrontierNode(Node):
         self.latest_map = msg  # store for other methods
 
         # Don't re-run logic while navigating
-        if self.goal_active:
+        if self.goal_active or self.rotation_in_progress:
             return 
         
         # visualize 
@@ -197,26 +199,51 @@ class TestFrontierNode(Node):
         """Periodically check Nav2 progress and handle failures gracefully."""
         self.navigator.spin_once(0.05)
 
-        if self.goal_active and self.navigator.is_task_complete():
-            result = self.navigator.result()
-            self.get_logger().info(f"Goal finished with result: {result}")
-            self.goal_active = False
+        if not self.goal_active:
+            self.get_logger().debug("No active goal. goal_active=False")
 
-            # --- Handle outcome ---
-            if result == 0:  # SUCCEEDED
-                self.get_logger().info("Frontier reached successfully — rotating toward final goal.")
-                self._rotate_toward_goal()  # NEW STEP
+        done = self.navigator.is_task_complete()
+        self.get_logger().info("[nav] goal_active=True, is_task_complete=True")
 
-            elif result == 1:  # CANCELED
-                self.get_logger().warn("Goal was canceled! Trying next frontier...")
-                self._handle_failed_goal()
+        if not done:
+            return
+        
+        result = self.navigator.result()
+        self.get_logger().info(f"[nav] Goal completed with result: {result}")
 
-            elif result == 2:  # FAILED
-                self.get_logger().warn("Goal unreachable! Trying next frontier...")
-                self._handle_failed_goal()
 
-            if self.sent_final_goal and result == 0:
-                self.get_logger().info("FINAL GOAL REACHED - EXPLORATION COMPLETE")
+        try:
+            if result == TaskResult.SUCCEEDED:
+                code = 0
+            elif result == TaskResult.CANCELED:
+                code = 1
+            elif result == TaskResult.FAILED:
+                code = 2
+            else:
+                code = -1  # Unknown result
+        except Exception as e:
+            code = int(result) if  isinstance(result, int) else -1
+            self.get_logger().warn(f"Error interpreting Nav2 result: {e}")
+
+        self.get_logger().info(f"[nav] Interpreted goal result code: {code}")
+        #self.goal_active = False
+
+        if code == 0:  # SUCCEEDED
+            self.get_logger().info("Frontier reached successfully — rotating toward final goal.")
+            self._rotate_toward_goal()
+            self.goal_active = False  # NEW STEP
+
+        elif code == 1:  # CANCELED
+            self.get_logger().warn("Goal was canceled! Trying next frontier...")
+            self._handle_failed_goal()
+
+        elif code == 2:  # FAILED
+            self.get_logger().warn("Goal unreachable! Trying next frontier...")
+            self._handle_failed_goal()
+
+        if self.sent_final_goal and code == 0:
+            self.get_logger().info("FINAL GOAL REACHED - EXPLORATION COMPLETE")
+
     
     def perform_goal_scan(self):
         """Rotate gently only if map didn't expand and goal is still unknown."""
@@ -264,7 +291,12 @@ class TestFrontierNode(Node):
         self.goal_active = False  # allow map_callback to trigger again
 
     def _rotate_toward_goal(self):
-        """Rotate rover in place to face the final goal, then wait for SLAM update."""
+        """Rotate rover in place to face the final goal, then wait for SLAM update."""  
+        if self.rotation_in_progress:
+            return
+        
+        self.rotation_in_progress = True
+
         try:
             robot_xy = self.get_robot_xy()
             if robot_xy is None:

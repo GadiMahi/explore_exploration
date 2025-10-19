@@ -27,7 +27,7 @@ class Nav2Client:
     def __init__(self):
         self.navigator = BasicNavigator()
 
-        initial_pose = create_pose_stamped(self.navigator, 0.00, 0.00, 0.00)
+        initial_pose = create_pose_stamped(self.navigator, -2.00, 0.50, 0.01)
         self.navigator.setInitialPose(initial_pose)
         #wait until Nav2 is active (bringup must be running )
         self.navigator.waitUntilNav2Active()
