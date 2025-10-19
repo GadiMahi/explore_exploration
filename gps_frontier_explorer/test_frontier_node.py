@@ -230,8 +230,7 @@ class TestFrontierNode(Node):
 
         if code == 0:  # SUCCEEDED
             self.get_logger().info("Frontier reached successfully — rotating toward final goal.")
-            self._rotate_toward_goal()
-            self.goal_active = False  # NEW STEP
+            self._rotate_toward_goal()  # NEW STEP
 
         elif code == 1:  # CANCELED
             self.get_logger().warn("Goal was canceled! Trying next frontier...")
@@ -325,6 +324,7 @@ class TestFrontierNode(Node):
 
             self.get_logger().info("Alignment complete. Waiting for SLAM map to update...")
             time.sleep(3.0)
+            self.goal_active = False
 
         except Exception as e:
             self.get_logger().warning(f"Rotation toward goal failed: {e}")
