@@ -22,7 +22,7 @@ class TestFrontierNode(Node):
         super().__init__('test_frontier_node')
         
         # Parameters
-        self.goal_x, self.goal_y = 2.0, 4.0
+        self.goal_x, self.goal_y = 2.5, -4.0
         self.sent_final_goal = False
         self.goal_active = False
         self.visited_frontiers = []
@@ -133,7 +133,7 @@ class TestFrontierNode(Node):
         if not chosen_frontier:
             cx, cy = candidates[0][0], candidates[0][1]
         else:
-            cx, cy = chosen_frontier 
+            cx, cy = chosen_frontier[0], chosen_frontier[1] 
         
         yaw = math.atan2(self.goal_y - cy, self.goal_x - cx)
         self.get_logger().info(f"Selected frontier at ({cx:.2f}, {cy:.2f}) -> yaw {math.degrees(yaw):.1f}°")
@@ -172,7 +172,7 @@ class TestFrontierNode(Node):
 
 
         yaw = math.atan2(self.goal_y - cy, self.goal_x - cx)
-        self.navigator.go_to_xy(target[0], target[1], yaw)
+        self.navigator.go_to_xy(target[0], target[1], 0.00)
         self.goal_active = True
 
         # Draw final global goal (blue sphere)
